@@ -1,5 +1,32 @@
 services:
-  # Tomcat 6.0 with JRE 7 for Struts 1.x compatibility
+  # =============================================================
+  # NGINX: リバースプロキシ（URL振り分け）
+  # 
+  # http://localhost/ でアクセス → URLによって自動振り分け
+  #   /book/search  → モダン (Spring Boot)
+  #   /api/*        → モダン (Spring Boot)
+  #   それ以外       → レガシー (Struts)
+  # =============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: gateway-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../config/nginx/502.html:/usr/share/nginx/html/502.html:ro
+    depends_on:
+      - tomcat
+      - modern-bookstore
+    networks:
+      - legacy-network
+    restart: unless-stopped
+
+  # =============================================================
+  # LEGACY: Tomcat 6.0 with JRE 7 for Struts 1.x compatibility
+  # 直接アクセス: http://localhost:8080/bookstore/book/search.do
+  # Nginx経由:    http://localhost/bookstore/book/search.do
+  # =============================================================
   tomcat:
     image: tomcat:6.0-jre7
     container_name: legacy-tomcat
@@ -11,10 +38,44 @@ services:
     environment:
       - CATALINA_OPTS=-Xms256m -Xmx512m
       - JAVA_OPTS=-Djava.awt.headless=true
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - legacy-network
 
-  # MySQL 5.7 for legacy compatibility
+  # =============================================================
+  # MODERN: Spring Boot 3 + Java 21 (書籍検索機能)
+  # 直接アクセス: http://localhost:8081/book/search
+  # Nginx経由:    http://localhost/book/search  ← こっちを使う！
+  # =============================================================
+  modern-bookstore:
+    build:
+      context: ../modern-bookstore
+      dockerfile: Dockerfile
+    container_name: modern-bookstore
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://legacy-mysql:3306/legacy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo
+      - SPRING_DATASOURCE_USERNAME=legacy_user
+      - SPRING_DATASOURCE_PASSWORD=legacy_pass
+      - TZ=Asia/Tokyo
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - legacy-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # =============================================================
+  # MySQL 5.7 for legacy compatibility (shared database)
+  # =============================================================
   mysql:
     image: mysql:5.7
     container_name: legacy-mysql
@@ -30,6 +91,12 @@ services:
       - ../config/mysql:/docker-entrypoint-initdb.d
     networks:
       - legacy-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # phpMyAdmin for database management
   phpmyadmin:

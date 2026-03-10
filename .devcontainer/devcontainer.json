@@ -96,8 +96,8 @@
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "forwardPorts": [8080, 8082, 3306],
-    // コンテナー起動後に実行するコマンド (環境確認のみ、ビルドは開発者が手動で実行)
-    "postCreateCommand": "bash -c 'echo \"=== Java 5 Legacy Development Environment ===\" && echo \"Java Version:\" && java -version && echo && echo \"Ant Version:\" && ant -version && echo && echo \"Environment Variables:\" && echo \"JAVA_HOME: $JAVA_HOME\" && echo \"ANT_HOME: $ANT_HOME\" && echo && echo \"=== Environment Ready! ===\" && echo \"Forwarded Services (Codespaces):\" && echo \"  - Tomcat: port 8080\" && echo \"  - phpMyAdmin: port 8082\" && echo \"  - MySQL: port 3306\" && echo && echo \"To build the application, run: ant clean build\" && echo \"Dev Container initialization completed.\"'",
+    // コンテナー起動後にアプリ起動準備を自動化
+    "postCreateCommand": "bash .devcontainer/scripts/bootstrap-app.sh",
     // SSH設定（オプション）- 必要に応じてコメントアウトを解除
     // "mounts": [
     //     "source=${localEnv:HOME}/.gitconfig,target=/home/javauser/.gitconfig,type=bind,consistency=cached,readonly",

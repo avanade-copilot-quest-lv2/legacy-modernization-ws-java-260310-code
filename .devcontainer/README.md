@@ -27,3 +27,25 @@ The dev container now uses a single Compose file (`compose.dev.yaml`) and starts
 ```bash
 ant clean build
 ```
+
+## Codespaces Auto Bootstrap
+
+On first container creation, `postCreateCommand` now runs:
+
+```bash
+bash .devcontainer/scripts/bootstrap-app.sh
+```
+
+This script will:
+- Wait for MySQL to become reachable
+- Build and package the app (`ant clean war`)
+- Wait until `http://tomcat:8080/legacy-app/login.do` is reachable from inside the dev container
+
+After completion, open the forwarded port for 8080 and access:
+- App: `http://localhost:8080/legacy-app/`
+- Login: `http://localhost:8080/legacy-app/login.do`
+
+Default login users:
+- `admin` / `admin123`
+- `manager` / `manager123`
+- `clerk` / `clerk123`

@@ -26,7 +26,27 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # ── 0. Wait for SSH port to be reachable ──
+      # ── 0. Verify secrets and wait for SSH ──
+      - name: Verify secrets are set
+        run: |
+          if [ -z "${{ secrets.VM_HOST }}" ]; then
+            echo "ERROR: VM_HOST secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VM_USERNAME }}" ]; then
+            echo "ERROR: VM_USERNAME secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VM_PASSWORD }}" ]; then
+            echo "ERROR: VM_PASSWORD secret is not set!"
+            exit 1
+          fi
+          # Print masked host info for debugging
+          HOST="${{ secrets.VM_HOST }}"
+          echo "VM_HOST length: ${#HOST} characters"
+          echo "VM_HOST first 4 chars: ${HOST:0:4}..."
+          echo "VM_USERNAME: ${{ secrets.VM_USERNAME }}"
+
       - name: Wait for SSH port to be reachable
         run: |
           echo "Waiting for SSH port 22 on ${{ secrets.VM_HOST }}..."
@@ -40,6 +60,12 @@ jobs:
           done
           echo "ERROR: SSH port 22 is not reachable after 5 minutes."
           echo "Please ensure the Azure VM is running and NSG allows port 22."
+          echo ""
+          echo "Debug: trying ping..."
+          ping -c 3 "${{ secrets.VM_HOST }}" || echo "Ping failed (ICMP may be blocked)"
+          echo ""
+          echo "Debug: trying curl to port 8080..."
+          curl -sf --connect-timeout 5 "http://${{ secrets.VM_HOST }}:8080/" || echo "Port 8080 also unreachable"
           exit 1
 
       # ── 1. Setup: install Docker on VM if needed ──

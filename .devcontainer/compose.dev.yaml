@@ -44,5 +44,4 @@ volumes:
 
 networks:
   legacy-network:
-    external: true
-    name: legacy-network
+    driver: bridge

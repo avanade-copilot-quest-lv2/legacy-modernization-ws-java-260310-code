@@ -92,7 +92,8 @@
     // VS Code の機能を設定
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},
-        "ghcr.io/devcontainers/features/github-cli:1": {}
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     // ホストネットワーク使用のため、ポートフォワーディングは不要
     // "forwardPorts": [],

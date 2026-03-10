@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>書籍検索 - Modern Bookstore</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .results-header h2 {
+            color: var(--gray-800);
+            font-size: 1.5rem;
+        }
+
+        .results-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .results-meta span {
+            background: var(--gray-100);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .results-meta .time {
+            background: #dbeafe;
+            color: var(--primary-color);
+        }
+
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .book-card {
+            background: var(--gray-50);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid var(--gray-200);
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .book-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .book-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .book-meta .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .book-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stock-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .stock-ok {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .stock-low {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .stock-out {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-600);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .compare-banner {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .compare-banner strong {
+            font-size: 1.1rem;
+        }
+
+        .compare-banner small {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>? Modern Bookstore</h1>
+            <span class="badge">Spring Boot 3 + Java 21 ?</span>
+        </header>
+
+        <div class="compare-banner">
+            <div>
+                <strong>? モダナイズされた検索機能</strong>
+                <br>
+                <small>レガシー (Struts 1.x) → Spring Boot 3 + JPA で高速化</small>
+            </div>
+            <div th:if="${searchTime != null}">
+                <strong th:text="'検索時間: ' + ${searchTime} + 'ms'"></strong>
+            </div>
+        </div>
+
+        <div class="card">
+            <form class="search-form" th:action="@{/book/search}" method="get">
+                <div class="form-group">
+                    <label for="isbn">ISBN</label>
+                    <input type="text" id="isbn" name="isbn" th:value="${isbn}" placeholder="ISBN番号で検索...">
+                </div>
+
+                <div class="form-group">
+                    <label for="title">タイトル</label>
+                    <input type="text" id="title" name="title" th:value="${title}" placeholder="タイトルで検索...">
+                </div>
+
+                <div class="form-group">
+                    <label for="catId">カテゴリ</label>
+                    <select id="catId" name="catId">
+                        <option value="">すべてのカテゴリ</option>
+                        <option th:each="cat : ${categories}" 
+                                th:value="${cat.id}" 
+                                th:text="${cat.displayName}"
+                                th:selected="${catId != null && catId == cat.id.toString()}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="flex-direction: row; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">? 検索</button>
+                    <a href="/book/search" class="btn btn-secondary">クリア</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="results-header">
+                <h2>検索結果</h2>
+                <div class="results-meta">
+                    <span th:text="'? ' + ${resultCount} + ' 件'">0 件</span>
+                    <span class="time" th:if="${searchTime != null}" th:text="'?? ' + ${searchTime} + 'ms'">0ms</span>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(books)}" class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <p>検索条件に一致する書籍が見つかりませんでした</p>
+            </div>
+
+            <div class="book-grid" th:unless="${#lists.isEmpty(books)}">
+                <div class="book-card" th:each="book : ${books}">
+                    <div class="book-title" th:text="${book.title}">Book Title</div>
+                    <div class="book-meta">
+                        <div class="row">
+                            <span>ISBN:</span>
+                            <span th:text="${book.isbn ?: 'N/A'}">0000000000000</span>
+                        </div>
+                        <div class="row">
+                            <span>出版社:</span>
+                            <span th:text="${book.publisher ?: 'N/A'}">Publisher</span>
+                        </div>
+                        <div class="row">
+                            <span>価格:</span>
+                            <span class="book-price" th:text="'\' + ${#numbers.formatDecimal(book.listPrice ?: 0, 1, 0)}">\0</span>
+                        </div>
+                        <div class="row">
+                            <span>税込:</span>
+                            <span th:text="'\' + ${#numbers.formatDecimal(book.calculatePriceWithTax(), 1, 0)}">\0</span>
+                        </div>
+                        <div class="row">
+                            <span>在庫:</span>
+                            <span class="stock-badge stock-ok" th:if="${book.stockQuantity >= 10}" th:text="${book.stockQuantity} + '冊'">10冊</span>
+                            <span class="stock-badge stock-low" th:if="${book.stockQuantity > 0 && book.stockQuantity < 10}" th:text="${book.stockQuantity} + '冊 (残りわずか)'">5冊</span>
+                            <span class="stock-badge stock-out" th:if="${book.stockQuantity <= 0}">在庫切れ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

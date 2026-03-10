@@ -13,13 +13,26 @@
 | Build | Ant | **Maven** |
 | Container | Tomcat 6 | **Embedded Tomcat 10** |
 
-## ? URL マッピング
+## ? URL マッピング（Nginx による自動振り分け）
 
 ```
-レガシー:  http://localhost:8080/bookstore/book/search.do
-  ↓ Nginx等でURL振り分け
-モダン:    http://localhost:8081/book/search
+http://localhost/...
+        ↓
+    [Nginx :80]
+        ↓ URLパスで振り分け
+   ┌────┴────┐
+   ↓         ↓
+/book/search  それ以外
+   ↓         ↓
+[モダン]   [レガシー]
 ```
+
+| URL | 振り分け先 |
+|-----|-----------|
+| `http://localhost/book/search` | **モダン** (Spring Boot) |
+| `http://localhost/api/*` | **モダン** (Spring Boot) |
+| `http://localhost/bookstore/*` | レガシー (Struts) |
+| その他 | レガシー (Struts) |
 
 ## ? プロジェクト構成
 
@@ -96,39 +109,59 @@ private BookSearchService bookSearchService;  // DI
 # .devcontainer ディレクトリで実行
 docker compose -f compose.services.yaml up -d
 
-# アクセス先
-# レガシー: http://localhost:8080/bookstore/book/search.do
-# モダン:   http://localhost:8081/book/search
-# API:     http://localhost:8081/api/books/search
+# アクセス先（Nginx経由 - ポート80）
+# トップ:       http://localhost/bookstore/
+# 書籍検索:     http://localhost/book/search     ← モダン版に自動ルーティング！
+# API:         http://localhost/api/books/search
+
+# 直接アクセス（デバッグ用）
+# レガシー直:   http://localhost:8080/bookstore/book/search.do
+# モダン直:     http://localhost:8081/book/search
 ```
 
 ## ? 発表デモ用シナリオ
 
-1. **両方の画面を並べて表示**
-   - レガシー (8080) vs モダン (8081)
+1. **トップページからスタート**
+   - `http://localhost/bookstore/` にアクセス（レガシー）
+   - ログインして操作
 
-2. **同じ検索を実行**
-   - 検索時間の違いを比較
-   - UIの違いを見せる
+2. **書籍検索をクリック**
+   - URLが `/book/search` に変わる
+   - → **自動的にモダン版にルーティング！** ?
+   - UIが明らかに変わる（グラデーション背景、カード表示）
 
-3. **コード比較**
+3. **検索実行して速度比較**
+   - モダン版: 検索時間が画面に表示される
+   - 開発者ツールで `X-Routed-To: modern-bookstore` ヘッダーを確認
+
+4. **コード比較**
    - BookAction.java (305行) vs BookSearchService.java (100行)
    - 直接JDBC vs Spring Data JPA
 
 4. **アーキテクチャ説明**
    ```
-   ┌─────────────┐     ┌─────────────┐
-   │  Legacy     │     │  Modern     │
-   │  Struts 1.x │     │  Spring     │
-   │  :8080      │     │  Boot :8081 │
-   └──────┬──────┘     └──────┬──────┘
-          │                   │
-          └─────────┬─────────┘
-                    │
-            ┌───────┴───────┐
-            │   MySQL 5.7   │
-            │  (共有DB)     │
-            └───────────────┘
+                    [ユーザー]
+                        │
+                        ▼
+               ┌────────────────┐
+               │  Nginx :80     │
+               │  (リバプロ)     │
+               └───────┬────────┘
+                       │ URLで振り分け
+          ┌────────────┴────────────┐
+          ▼                         ▼
+   ┌─────────────┐          ┌─────────────┐
+   │  Legacy     │          │  Modern     │
+   │  Struts 1.x │          │  Spring     │
+   │  :8080      │          │  Boot :8081 │
+   └──────┬──────┘          └──────┬──────┘
+          │                        │
+          └───────────┬────────────┘
+                      │
+              ┌───────┴───────┐
+              │   MySQL 5.7   │
+              │  (共有DB)     │
+              └───────────────┘
    ```
 
 ## ? 次のステップ（将来の拡張）

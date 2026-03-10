@@ -1,7 +1,31 @@
 services:
   # =============================================================
+  # NGINX: リバースプロキシ（URL振り分け）
+  # 
+  # http://localhost/ でアクセス → URLによって自動振り分け
+  #   /book/search  → モダン (Spring Boot)
+  #   /api/*        → モダン (Spring Boot)
+  #   それ以外       → レガシー (Struts)
+  # =============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: gateway-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../config/nginx/502.html:/usr/share/nginx/html/502.html:ro
+    depends_on:
+      - tomcat
+      - modern-bookstore
+    networks:
+      - legacy-network
+    restart: unless-stopped
+
+  # =============================================================
   # LEGACY: Tomcat 6.0 with JRE 7 for Struts 1.x compatibility
-  # URL: http://localhost:8080/bookstore/book/search.do
+  # 直接アクセス: http://localhost:8080/bookstore/book/search.do
+  # Nginx経由:    http://localhost/bookstore/book/search.do
   # =============================================================
   tomcat:
     image: tomcat:6.0-jre7
@@ -22,8 +46,8 @@ services:
 
   # =============================================================
   # MODERN: Spring Boot 3 + Java 21 (書籍検索機能)
-  # URL: http://localhost:8081/book/search
-  # API: http://localhost:8081/api/books/search
+  # 直接アクセス: http://localhost:8081/book/search
+  # Nginx経由:    http://localhost/book/search  ← こっちを使う！
   # =============================================================
   modern-bookstore:
     build:

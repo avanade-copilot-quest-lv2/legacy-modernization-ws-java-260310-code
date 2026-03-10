@@ -12,13 +12,14 @@ param resourceGroupName string = 'rg-legacy-bookstore'
 param vmName string = 'vm-legacy-bookstore'
 
 @description('VM size')
-param vmSize string = 'Standard_B2s'
+param vmSize string = 'Standard_D2s_v3'
 
 @description('Admin username for the VM')
 param adminUsername string = 'azureuser'
 
 @secure()
-@description('Admin password for the VM (must meet Azure complexity requirements)')
+@minLength(12)
+@description('Admin password for the VM (12+ chars, uppercase + lowercase + digit + special char)')
 param adminPassword string
 
 @description('Resource tags')

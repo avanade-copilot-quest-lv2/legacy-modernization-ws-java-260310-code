@@ -16,7 +16,8 @@ param vmSize string
 param adminUsername string
 
 @secure()
-@description('Admin password')
+@minLength(12)
+@description('Admin password (12+ chars, uppercase + lowercase + digit + special char)')
 param adminPassword string
 
 @description('NIC resource ID')

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "japaneast"
+    },
+    "resourceGroupName": {
+      "value": "rg-legacy-bookstore"
+    },
+    "vmName": {
+      "value": "vm-legacy-bookstore"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "tags": {
+      "value": {
+        "project": "legacy-bookstore",
+        "environment": "dev"
+      }
+    }
+  }
+}

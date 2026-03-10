@@ -159,13 +159,13 @@ RUN echo "Cleaning up unnecessary files..." && \
     echo "Cleanup completed"
 
 # Apache Antのダウンロードとインストール（Antパッケージが古い可能性があるため）
-RUN echo "Installing Apache Ant 1.6.5 (compatible with Java 5)..." && \
+RUN echo "Installing Apache Ant 1.9.16 (compatible with Java 5)..." && \
     cd /tmp && \
-    wget -q https://archive.apache.org/dist/ant/binaries/apache-ant-1.6.5-bin.tar.gz && \
-    tar -xzf apache-ant-1.6.5-bin.tar.gz && \
-    mv apache-ant-1.6.5 /opt/ant && \
+    wget -q https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.16-bin.tar.gz && \
+    tar -xzf apache-ant-1.9.16-bin.tar.gz && \
+    mv apache-ant-1.9.16 /opt/ant && \
     chown -R javauser:javauser /opt/ant && \
-    rm -f apache-ant-1.6.5-bin.tar.gz && \
+    rm -f apache-ant-1.9.16-bin.tar.gz && \
     echo "Apache Ant installation completed"
 
 # Apache Tomcat 6.0.53のダウンロードとインストール（Java 5互換）

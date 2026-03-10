@@ -137,7 +137,7 @@
     // デバッグ設定のサポート
     "initializeCommand": "bash -c 'echo \"Starting host services for Dev Container...\" && bash ${localWorkspaceFolder}/.devcontainer/scripts/cleanup-old-containers.sh && docker compose -f ${localWorkspaceFolder}/.devcontainer/compose.services.yaml up -d --remove-orphans tomcat mysql phpmyadmin && echo \"Host services started\"'",
     // コンテナのユーザー設定
-    "remoteUser": "javauser",
+    "remoteUser": "root",
     // ライフサイクルスクリプト
     "updateContentCommand": "echo 'Container updated successfully!'",
     // 開発エクスペリエンス向上

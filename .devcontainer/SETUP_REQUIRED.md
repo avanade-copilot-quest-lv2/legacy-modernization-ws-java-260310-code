@@ -30,6 +30,8 @@ The script will:
 - Verify SHA256 checksum for integrity
 - Skip download if the file already exists with the correct checksum
 
+For Codespaces, place the JDK binary in `.devcontainer/` before rebuilding the container. The container build cannot proceed without this file (unless outbound download from Archive.org is available during build).
+
 Alternatively, the Dockerfile will automatically download the JDK during the Docker build if the binary is not present locally.
 
 ### Option 2: Manual Download
@@ -85,6 +87,14 @@ After placing the JDK binary file:
 # From project root
 docker compose -f .devcontainer/compose.dev.yaml build --no-cache
 ```
+
+### Step 4: Verify Services (Single Compose)
+
+The development stack is unified in `.devcontainer/compose.dev.yaml`. After rebuild, these services should be running:
+- `java5-dev`
+- `mysql`
+- `tomcat`
+- `phpmyadmin`
 
 ---
 

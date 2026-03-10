@@ -9,15 +9,12 @@ services:
     volumes:
       # プロジェクトファイルのマウント
       - ..:/app:cached
-      # Git設定の永続化（読み取り専用）
-      - ~/.gitconfig:/home/javauser/.gitconfig:ro
       # Maven/Gradleキャッシュディレクトリ（将来的な使用のため）
       - maven-cache:/home/javauser/.m2
       # Antライブラリキャッシュ
       - ant-cache:/home/javauser/.ant
     ports:
-      # Webアプリケーション用ポート
-      - "8080:8080"   # Application Server
+      # Webアプリケーション用ポート（Tomcatと競合しないポート）
       - "9000:9000"   # Java Debug Port
     environment:
       - TZ=Asia/Tokyo
@@ -42,6 +39,4 @@ volumes:
   ant-cache:
     driver: local
 
-networks:
-  legacy-network:
-    driver: bridge
+# legacy-networkはcompose.services.yamlで定義されている

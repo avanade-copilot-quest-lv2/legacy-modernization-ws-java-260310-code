@@ -16,8 +16,6 @@ services:
       # Antライブラリキャッシュ
       - ant-cache:/home/javauser/.ant
     ports:
-      # Webアプリケーション用ポート
-      - "8080:8080"   # Application Server
       - "9000:9000"   # Java Debug Port
     environment:
       - TZ=Asia/Tokyo
@@ -44,5 +42,4 @@ volumes:
 
 networks:
   legacy-network:
-    external: true
-    name: legacy-network
+    driver: bridge

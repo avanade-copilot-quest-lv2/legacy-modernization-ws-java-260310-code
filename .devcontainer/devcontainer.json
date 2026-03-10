@@ -3,6 +3,7 @@
     "dockerComposeFile": ["compose.dev.yaml", "compose.services.yaml"],
     "service": "java5-dev",
     "workspaceFolder": "/app",
+    "forwardPorts": [8080, 8082, 3306, 9000],
     // Configure tool-specific properties.
     "customizations": {
         "vscode": {

@@ -2,9 +2,12 @@
 # Trigger: manual (workflow_dispatch) only
 #
 # Required GitHub Secrets:
-#   VM_HOST      — Public IP (or FQDN) of the Azure VM
-#   VM_USERNAME  — SSH user (default: azureuser)
-#   VM_PASSWORD  — SSH password for the VM
+#   VM_HOST               — Public IP (or FQDN) of the Azure VM
+#   VM_USERNAME            — SSH user (default: azureuser)
+#   VM_PASSWORD            — SSH password for the VM
+#   AZURE_CREDENTIALS      — Azure service principal JSON (for az login)
+#   AZURE_RESOURCE_GROUP   — Resource group name (e.g. rg-legacy-bookstore)
+#   AZURE_VM_NAME          — VM name (e.g. vm-legacy-bookstore)
 #
 # Architecture on the VM:
 #   Nginx (:80)  →  Legacy Tomcat (:8080)  /  Modern Spring Boot (:8081)
@@ -22,6 +25,56 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # ── 0. Ensure Azure VM is running ──
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure VM is running
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            echo "=== Checking VM power state ==="
+            VM_STATE=$(az vm get-instance-view \
+              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ secrets.AZURE_VM_NAME }}" \
+              --query "instanceView.statuses[?starts_with(code,'PowerState/')].displayStatus" \
+              -o tsv)
+            echo "Current state: $VM_STATE"
+
+            if [ "$VM_STATE" != "VM running" ]; then
+              echo "=== Starting VM... ==="
+              az vm start \
+                --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+                --name "${{ secrets.AZURE_VM_NAME }}"
+              echo "=== VM started ==="
+              # Wait for SSH to become available after boot
+              sleep 30
+            fi
+
+            # Retrieve and display public IP
+            PUBLIC_IP=$(az vm show \
+              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ secrets.AZURE_VM_NAME }}" \
+              --show-details \
+              --query publicIps -o tsv)
+            echo "VM Public IP: $PUBLIC_IP"
+
+      - name: Wait for SSH port to be reachable
+        run: |
+          echo "Waiting for SSH port 22 on ${{ secrets.VM_HOST }}..."
+          for i in $(seq 1 30); do
+            if nc -z -w 5 "${{ secrets.VM_HOST }}" 22 2>/dev/null; then
+              echo "SSH port is reachable!"
+              exit 0
+            fi
+            echo "  Attempt $i/30 — not reachable yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "ERROR: SSH port 22 is not reachable after 5 minutes"
+          exit 1
+
       # ── 1. Setup: install Docker on VM if needed ──
       - name: Setup Docker on VM
         uses: appleboy/ssh-action@v1.2.0
@@ -30,6 +83,7 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           password: ${{ secrets.VM_PASSWORD }}
           script_stop: true
+          timeout: 60s
           command_timeout: 10m
           script: |
             if ! command -v docker &> /dev/null; then
@@ -47,8 +101,10 @@ jobs:
               sudo usermod -aG docker $USER
               echo "=== Docker installed ==="
             fi
-            docker --version
-            docker compose version
+            # Use sudo for docker commands in case group membership
+            # hasn't taken effect in this session yet
+            sudo docker --version
+            sudo docker compose version
 
       # ── 2. Clone or pull the repository ──
       - name: Clone / update repository on VM
@@ -58,6 +114,7 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           password: ${{ secrets.VM_PASSWORD }}
           script_stop: true
+          timeout: 60s
           command_timeout: 5m
           script: |
             REPO_DIR="$HOME/legacy-modernization"
@@ -83,19 +140,20 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           password: ${{ secrets.VM_PASSWORD }}
           script_stop: true
+          timeout: 60s
           command_timeout: 15m
           script: |
             cd "$HOME/legacy-modernization/infra/docker"
 
             echo "=== Stopping existing containers (if any) ==="
-            docker compose down --remove-orphans || true
+            sudo docker compose down --remove-orphans || true
 
             echo "=== Building and starting services ==="
-            docker compose up -d --build
+            sudo docker compose up -d --build
 
             echo "=== Waiting for services to start ==="
             sleep 10
-            docker compose ps
+            sudo docker compose ps
 
       # ── 4. Health check ──
       - name: Health check
@@ -105,11 +163,12 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           password: ${{ secrets.VM_PASSWORD }}
           script_stop: false
+          timeout: 60s
           command_timeout: 3m
           script: |
             echo "=== Container status ==="
             cd "$HOME/legacy-modernization/infra/docker"
-            docker compose ps
+            sudo docker compose ps
 
             echo ""
             echo "=== Health checks ==="
@@ -119,7 +178,7 @@ jobs:
               echo "Attempt $i/12..."
 
               # Check MySQL
-              if docker exec legacy-mysql mysqladmin ping -h localhost -u root -proot 2>/dev/null; then
+              if sudo docker exec legacy-mysql mysqladmin ping -h localhost -u root -proot 2>/dev/null; then
                 echo "  ✓ MySQL is ready"
               else
                 echo "  ✗ MySQL not ready yet"

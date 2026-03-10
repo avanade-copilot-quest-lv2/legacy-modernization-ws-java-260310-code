@@ -1,0 +1,52 @@
+#cloud-config
+# cloud-init script for Legacy Bookstore VM
+# Installs: OpenJDK 11, Tomcat 9, MySQL 8.0, Ant
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - openjdk-11-jdk-headless
+  - tomcat9
+  - tomcat9-admin
+  - mysql-server
+  - ant
+  - unzip
+  - net-tools
+
+runcmd:
+  # ─── Tomcat: JAVA_HOME 設定 ─────────────────────────────────────
+  - echo 'JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64' >> /etc/default/tomcat9
+
+  # ─── ホスト名エイリアス (hibernate.cfg.xml が legacy-mysql を参照) ──
+  - echo '127.0.0.1 legacy-mysql' >> /etc/hosts
+
+  # ─── web.xml で参照されるディレクトリを作成 ───────────────────────
+  - mkdir -p /home/dev1/uploads
+  - mkdir -p /opt/bookstore/tmp
+  - mkdir -p /home/dev1/bookstore/config
+  - chmod 777 /home/dev1/uploads
+  - chmod 777 /opt/bookstore/tmp
+  - echo '# bookstore app config' > /home/dev1/bookstore/config/app.properties
+
+  # ─── MySQL: 起動完了を待つ ────────────────────────────────────────
+  - systemctl start mysql
+  - until mysql -u root -e "SELECT 1" > /dev/null 2>&1; do sleep 2; done
+
+  # ─── MySQL: DB とユーザー作成 ──────────────────────────────────────
+  # legacy JDBC ドライバー(com.mysql.jdbc.Driver)は caching_sha2_password 非対応のため
+  # mysql_native_password を明示指定する
+  - mysql -u root -e "CREATE DATABASE IF NOT EXISTS legacy_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+  - mysql -u root -e "CREATE USER IF NOT EXISTS 'legacy_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'legacy_pass';"
+  - mysql -u root -e "CREATE USER IF NOT EXISTS 'legacy_user'@'127.0.0.1' IDENTIFIED WITH mysql_native_password BY 'legacy_pass';"
+  - mysql -u root -e "GRANT ALL PRIVILEGES ON legacy_db.* TO 'legacy_user'@'localhost';"
+  - mysql -u root -e "GRANT ALL PRIVILEGES ON legacy_db.* TO 'legacy_user'@'127.0.0.1';"
+  - mysql -u root -e "FLUSH PRIVILEGES;"
+  - systemctl enable mysql
+
+  # ─── Tomcat: webapps ディレクトリのパーミッション調整 ──────────────
+  - chmod 755 /var/lib/tomcat9/webapps
+
+  # ─── Tomcat: WAR 配置ディレクトリ作成・再起動 ─────────────────────
+  - systemctl restart tomcat9
+  - systemctl enable tomcat9

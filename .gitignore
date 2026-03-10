@@ -15,6 +15,7 @@ dist/*
 
 # IDE files
 .vscode/
+.vscode-remote/
 .idea/
 *.swp
 *.swo

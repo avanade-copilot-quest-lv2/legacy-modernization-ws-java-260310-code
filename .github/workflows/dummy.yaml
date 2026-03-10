@@ -53,6 +53,7 @@ jobs:
           timeout: 60s
           command_timeout: 10m
           script: |
+            # Install Docker if not present
             if ! command -v docker &> /dev/null; then
               echo "=== Docker not found. Installing... ==="
               sudo apt-get update
@@ -68,8 +69,15 @@ jobs:
               sudo usermod -aG docker $USER
               echo "=== Docker installed ==="
             fi
-            # Use sudo for docker commands in case group membership
-            # hasn't taken effect in this session yet
+
+            # Install Docker Compose plugin if not present
+            if ! sudo docker compose version &> /dev/null; then
+              echo "=== Docker Compose plugin not found. Installing... ==="
+              sudo apt-get update
+              sudo apt-get install -y docker-compose-plugin
+              echo "=== Docker Compose plugin installed ==="
+            fi
+
             sudo docker --version
             sudo docker compose version
 

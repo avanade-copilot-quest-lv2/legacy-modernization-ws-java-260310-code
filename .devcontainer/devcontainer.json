@@ -93,10 +93,30 @@
         "ghcr.io/devcontainers/features/git:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
-    // ホストネットワーク使用のため、ポートフォワーディングは不要
-    // "forwardPorts": [],
-    // コンテナー起動後に実行するコマンド (環境確認のみ、ビルドは開発者が手動で実行)
-    "postCreateCommand": "bash -c 'echo \"=== Java 5 Legacy Development Environment ===\" && echo \"Java Version:\" && java -version && echo && echo \"Ant Version:\" && ant -version && echo && echo \"Environment Variables:\" && echo \"JAVA_HOME: $JAVA_HOME\" && echo \"ANT_HOME: $ANT_HOME\" && echo && echo \"=== Environment Ready! ===\" && echo \"External Services:\" && echo \"  - Tomcat: http://localhost:8080\" && echo \"  - phpMyAdmin: http://localhost:8082\" && echo \"  - MySQL: localhost:3306\" && echo && echo \"To build the application, run: ant clean build\" && echo \"Dev Container initialization completed.\"'",
+    // ポートフォワーディング設定
+    "forwardPorts": [
+        8080,
+        8082,
+        3306
+    ],
+    "portsAttributes": {
+        "8080": {
+            "label": "Tomcat (legacy-app)",
+            "onAutoForward": "openBrowser"
+        },
+        "8082": {
+            "label": "phpMyAdmin",
+            "onAutoForward": "notify"
+        },
+        "3306": {
+            "label": "MySQL",
+            "onAutoForward": "silent"
+        }
+    },
+    // コンテナー初回作成後: ライブラリダウンロード → ビルド
+    "postCreateCommand": "bash /app/.devcontainer/scripts/download-libs.sh && ant -f /app/build.xml clean build",
+    // コンテナー起動ごと: WARをデプロイしてTomcatを起動
+    "postStartCommand": "bash /app/.devcontainer/scripts/start-tomcat.sh",
     // マウント設定
     "mounts": [
         // Git 設定の永続化

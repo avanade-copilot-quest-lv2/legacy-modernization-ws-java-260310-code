@@ -105,8 +105,14 @@ core.*
 # Runtime artifacts (Tomcat, MariaDB data)
 .runtime/
 
+# Tomcat installation (managed by Dockerfile / start-tomcat.sh)
+tomcat/
+
 # Copilot session state
 .copilot/
 
 # Config generated at runtime
 .config/
+
+.vscode-remote
+tomcat

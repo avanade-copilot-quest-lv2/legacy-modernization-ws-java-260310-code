@@ -168,10 +168,23 @@ RUN echo "Installing Apache Ant 1.6.5 (compatible with Java 5)..." && \
     rm -f apache-ant-1.6.5-bin.tar.gz && \
     echo "Apache Ant installation completed"
 
+# Apache Tomcat 6.0.53のダウンロードとインストール（Java 5互換）
+RUN echo "Installing Apache Tomcat 6.0.53 (compatible with Java 5)..." && \
+    cd /tmp && \
+    curl -sL -o apache-tomcat-6.0.53.tar.gz \
+        "https://archive.apache.org/dist/tomcat/tomcat-6/v6.0.53/bin/apache-tomcat-6.0.53.tar.gz" && \
+    tar xzf apache-tomcat-6.0.53.tar.gz && \
+    mv apache-tomcat-6.0.53 /opt/tomcat && \
+    chmod +x /opt/tomcat/bin/*.sh && \
+    chown -R javauser:javauser /opt/tomcat && \
+    rm -f apache-tomcat-6.0.53.tar.gz && \
+    echo "Tomcat installation completed"
+
 # 環境変数の設定（ホストの環境変数を確実に上書き）
 ENV JAVA_HOME=/usr/java/jdk1.5.0_22
 ENV ANT_HOME=/opt/ant
-ENV PATH=/usr/java/jdk1.5.0_22/bin:/opt/ant/bin:$PATH
+ENV CATALINA_HOME=/opt/tomcat
+ENV PATH=/usr/java/jdk1.5.0_22/bin:/opt/ant/bin:/opt/tomcat/bin:$PATH
 ENV CLASSPATH=.
 
 # デフォルトユーザーを非特権ユーザーに変更

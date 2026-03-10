@@ -1,6 +1,6 @@
 {
     "name": "Java 5 Legacy Development Environment",
-    "dockerComposeFile": "compose.dev.yaml",
+    "dockerComposeFile": ["compose.dev.yaml", "compose.services.yaml"],
     "service": "java5-dev",
     "workspaceFolder": "/app",
     // Configure tool-specific properties.

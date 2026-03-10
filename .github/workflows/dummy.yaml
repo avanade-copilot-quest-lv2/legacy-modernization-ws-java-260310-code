@@ -149,32 +149,16 @@ jobs:
           command_timeout: 5m
           envs: GH_PAT
           script: |
-            set -x
             REPO_DIR="$HOME/legacy-modernization"
             REPO_URL="https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
             BRANCH="${{ github.ref_name }}"
 
-            echo "REPO_DIR=$REPO_DIR"
-            echo "BRANCH=$BRANCH"
-            echo "GH_PAT length: ${#GH_PAT}"
+            echo "=== Cleaning up old directory (if any) ==="
+            rm -rf "$REPO_DIR"
 
-            # Clean up partial clone from previous failed attempt
-            if [ -d "$REPO_DIR" ] && [ ! -d "$REPO_DIR/.git" ]; then
-              echo "=== Removing incomplete clone directory ==="
-              rm -rf "$REPO_DIR"
-            fi
+            echo "=== Cloning repository (branch: $BRANCH) ==="
+            git clone --branch "$BRANCH" "$REPO_URL" "$REPO_DIR" 2>&1
 
-            if [ -d "$REPO_DIR/.git" ]; then
-              echo "=== Updating existing repository ==="
-              cd "$REPO_DIR"
-              git remote set-url origin "$REPO_URL"
-              git fetch origin 2>&1 || { echo "git fetch failed"; exit 1; }
-              git checkout "$BRANCH" 2>&1 || { echo "git checkout failed"; exit 1; }
-              git reset --hard "origin/$BRANCH" 2>&1 || { echo "git reset failed"; exit 1; }
-            else
-              echo "=== Cloning repository ==="
-              git clone --branch "$BRANCH" "$REPO_URL" "$REPO_DIR" 2>&1 || { echo "git clone failed"; exit 1; }
-            fi
             echo "=== Repository ready ==="
         env:
           GH_PAT: ${{ secrets.GH_PAT }}

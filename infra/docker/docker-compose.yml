@@ -1,0 +1,102 @@
+# ============================================================
+# Production deployment compose — reuses .devcontainer service
+# definitions with adjustments for VM deployment.
+#
+# Usage:  docker compose up -d --build
+# Access: http://<VM_IP>/          → Nginx → Legacy / Modern
+# ============================================================
+
+services:
+  # --- Nginx reverse proxy (port 80) ---
+  nginx:
+    image: nginx:alpine
+    container_name: gateway-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../../config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../config/nginx/502.html:/usr/share/nginx/html/502.html:ro
+    depends_on:
+      - tomcat
+      - modern-bookstore
+    networks:
+      - legacy-network
+    restart: unless-stopped
+
+  # --- Legacy Struts App — Tomcat 6 / JRE 7 ---
+  # WAR is built inside Dockerfile.legacy, then deployed to webapps/
+  tomcat:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.legacy
+    container_name: legacy-tomcat
+    hostname: legacy-tomcat
+    ports:
+      - "8080:8080"
+    environment:
+      - CATALINA_OPTS=-Xms256m -Xmx512m
+      - JAVA_OPTS=-Djava.awt.headless=true
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - legacy-network
+    restart: unless-stopped
+
+  # --- Modern Spring Boot 3 / Java 21 ---
+  modern-bookstore:
+    build:
+      context: ../../modern-bookstore
+      dockerfile: Dockerfile
+    container_name: modern-bookstore
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://legacy-mysql:3306/legacy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo
+      - SPRING_DATASOURCE_USERNAME=legacy_user
+      - SPRING_DATASOURCE_PASSWORD=legacy_pass
+      - TZ=Asia/Tokyo
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - legacy-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # --- MySQL 5.7 (shared database) ---
+  mysql:
+    image: mysql:5.7
+    container_name: legacy-mysql
+    hostname: legacy-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=legacy_db
+      - MYSQL_USER=legacy_user
+      - MYSQL_PASSWORD=legacy_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../../config/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - legacy-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  legacy-network:
+    driver: bridge

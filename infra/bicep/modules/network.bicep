@@ -49,6 +49,20 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-09-01' = {
           description: 'Tomcat HTTP port for Legacy Bookstore application'
         }
       }
+      {
+        name: 'allow-http'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '80'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          description: 'HTTP port for Nginx reverse proxy'
+        }
+      }
     ]
   }
 }

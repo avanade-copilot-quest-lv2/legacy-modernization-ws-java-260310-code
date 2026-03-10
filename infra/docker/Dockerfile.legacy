@@ -1,0 +1,50 @@
+# Legacy Bookstore - Struts 1.x on Tomcat 6 / JRE 7
+# Matches .devcontainer/compose.services.yaml runtime configuration
+#
+# Build stage: JDK 8 + Ant (cross-compiles to Java 1.5 target)
+# Runtime stage: Tomcat 6.0 / JRE 7 (same as .devcontainer)
+FROM eclipse-temurin:8-jdk AS builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ant curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Download JAR dependencies first (cache-friendly)
+COPY infra/docker/download-libs.sh ./download-libs.sh
+RUN chmod +x download-libs.sh
+
+RUN mkdir -p lib && ./download-libs.sh lib
+
+# Copy source and build config
+COPY lib/HIBERNATE_LIBRARIES.md lib/
+COPY build.xml ./
+COPY src ./src
+
+# Build WAR with Ant
+RUN ant clean build
+
+# Runtime stage: Tomcat 6 / JRE 7 — matching .devcontainer
+FROM tomcat:6.0-jre7
+
+# Remove default webapps
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Create directories expected by the legacy app (mirrors cloud-init.yaml)
+RUN mkdir -p /home/dev1/uploads && chmod 777 /home/dev1/uploads && \
+    mkdir -p /opt/bookstore/tmp && chmod 777 /opt/bookstore/tmp && \
+    mkdir -p /home/dev1/bookstore/config
+
+# Create minimal app.properties (matches cloud-init.yaml)
+RUN echo "app.name=BookstoreApp"      >  /home/dev1/bookstore/config/app.properties && \
+    echo "app.version=1.0"            >> /home/dev1/bookstore/config/app.properties && \
+    echo "app.env=docker"             >> /home/dev1/bookstore/config/app.properties && \
+    echo "upload.dir=/home/dev1/uploads" >> /home/dev1/bookstore/config/app.properties
+
+# Deploy WAR
+COPY --from=builder /build/dist/legacy-app.war /usr/local/tomcat/webapps/legacy-app.war
+
+EXPOSE 8080
+
+CMD ["catalina.sh", "run"]

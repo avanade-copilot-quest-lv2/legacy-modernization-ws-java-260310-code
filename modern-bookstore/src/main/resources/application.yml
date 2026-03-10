@@ -1,0 +1,45 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: modern-bookstore
+  
+  datasource:
+    url: jdbc:mysql://legacy-mysql:3306/legacy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo
+    username: legacy_user
+    password: legacy_pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  
+  jpa:
+    hibernate:
+      ddl-auto: none  # ÉåÉKÉVÅ[DBÇ»ÇÃÇ≈é©ìÆçÏê¨ÇµÇ»Ç¢
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+# Actuator endpoints for health check
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.example.bookstore: DEBUG
+    org.hibernate.SQL: DEBUG

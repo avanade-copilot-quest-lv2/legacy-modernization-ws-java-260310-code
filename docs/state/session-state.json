@@ -1,0 +1,293 @@
+{
+  "project": "legacy-modernization-agentic-workflow",
+  "version": 1,
+  "status": {
+    "phase": "specification",
+    "overall_readiness": "not_ready",
+    "recommended_next_action": "Continue detailing the artifact schema packet-by-packet, then define migration unit and quality gate, and only then confirm the draft specs."
+  },
+  "go_no_go": {
+    "current_recommendation": "No-Go",
+    "reason_summary": [
+      "Artifact schema, migration-unit boundary, and quality-gate contracts are not yet fixed.",
+      "Behavior equivalence and deterministic E2E strategy are still draft and not yet confirmed.",
+      "Evidence artifacts and core skill I/O contracts are not yet specified.",
+      "Quality gates and characterization oracle requirements are not yet deterministic.",
+      "Evaluation program, migration-unit rules, and eval harness ownership are not yet fixed."
+    ],
+    "required_for_go": [
+      "beta_deliverable_defined",
+      "supported_scope_defined",
+      "core_skill_io_defined",
+      "behavior_equivalence_defined",
+      "artifact_schema_defined",
+      "quality_gates_defined",
+      "characterization_oracle_defined",
+      "migration_unit_defined",
+      "repo_profile_schema_defined",
+      "eval_harness_ownership_defined",
+      "repo_selection_policy_defined",
+      "evaluation_program_defined"
+    ]
+  },
+  "decisions": [
+    {
+      "id": "goal-definition",
+      "status": "decided",
+      "decision": "Target is a repo-independent modernization workflow in orchestration/eval/gates, not a single universal transformation prompt."
+    },
+    {
+      "id": "beta-priority",
+      "status": "decided",
+      "decision": "Beta prioritizes precision over breadth."
+    },
+    {
+      "id": "asis-runtime-assumption",
+      "status": "decided",
+      "decision": "Assume the AsIs repository is runnable locally."
+    },
+    {
+      "id": "beta-outcome",
+      "status": "decided",
+      "decision": "Primary beta goal is behavioral equivalence between AsIs and ToBe."
+    },
+    {
+      "id": "feature-scope",
+      "status": "decided",
+      "decision": "Feature addition and feature improvement are out of scope for beta."
+    },
+    {
+      "id": "performance-scope",
+      "status": "decided",
+      "decision": "Performance improvement is out of scope unless trivially low-risk."
+    },
+    {
+      "id": "security-scope",
+      "status": "decided",
+      "decision": "Security issue remediation should be included in scope."
+    },
+    {
+      "id": "meta-harness",
+      "status": "proposed",
+      "decision": "Use .github/skills/skill-creator as the meta-harness for building modernization skills."
+    },
+    {
+      "id": "repo-selection-policy",
+      "status": "decided",
+      "decision": "Adopt Fixed cohort + Rolling expansion: start with 1 canonical, 2 near-neighbor, and 1 adversarial repo, then add repos only for new failure families or support-matrix expansion."
+    },
+    {
+      "id": "beta-deliverable",
+      "status": "decided",
+      "decision": "Beta deliverable is a single modernization workflow for a fixed FROM/TO scope, composed of multiple core skills, orchestration, intermediate artifacts, and deterministic quality gates; it is not a single giant skill."
+    },
+    {
+      "id": "support-matrix",
+      "status": "decided",
+      "decision": "Support matrix is fixed to Java legacy server-rendered web (Struts 1 / Servlet + JSP / classic Spring MVC, Java 5-8, Ant or Maven) modernized toward Spring Boot + React using a Strangler Fig strategy with screen/route-level migration units."
+    },
+    {
+      "id": "behavior-equivalence",
+      "status": "proposed",
+      "decision": "Draft proposes judging behavior equivalence per migration unit using observable behavior, with must-match, allowed-difference, and must-not-change rules backed by evidence artifacts and 4-way outcomes: pass/fail/partial/undetermined."
+    },
+    {
+      "id": "deterministic-e2e",
+      "status": "proposed",
+      "decision": "Draft proposes accessibility-first characterization E2E with separate generation/execution and controlled network, time, randomness, data, and session state."
+    },
+    {
+      "id": "artifact-schema-direction",
+      "status": "decided",
+      "decision": "Artifact schema will use a common envelope plus typed packets, with a medium-weight envelope, a standard packet set (ui/http/db/session-auth/external-io/comparison), and unit-dependent must-capture rules prioritized for reproducibility and feasibility."
+    },
+    {
+      "id": "artifact-schema-machine-judging",
+      "status": "decided",
+      "decision": "Artifact schema should mechanically judge everything that can be mechanically judged by comparing canonical fields first; raw evidence is retained primarily for diagnosis and limited human review."
+    },
+    {
+      "id": "artifact-schema-ui-http-db",
+      "status": "decided",
+      "decision": "UI flow packets use accessibility-first canonical fields plus diagnostic raw evidence refs; HTTP packets use canonical request/response summaries plus diagnostic raw HTTP refs; DB side-effect packets are required only when declared by unit manifest and compare existing data-contract side effects via change summaries rather than full row snapshots."
+    },
+    {
+      "id": "artifact-schema-session-auth",
+      "status": "decided",
+      "decision": "Session/auth packets judge authentication and authorization semantics rather than raw cookie or session values, and become required only when the unit manifest declares auth preconditions or protected behavior."
+    },
+    {
+      "id": "artifact-schema-external-io",
+      "status": "decided",
+      "decision": "External I/O packets judge integration semantics rather than raw payload equality, use payload meaning summaries plus delivery/failure semantics, and become required only when the unit manifest declares critical external side effects."
+    },
+    {
+      "id": "artifact-schema-comparison-verdict",
+      "status": "decided",
+      "decision": "Comparison/verdict packets aggregate packet-level comparisons into rule-based unit judgments with 4-state outcomes (pass/fail/partial/undetermined), but beta gates and evaluations treat only pass as success and reject all other outcomes."
+    },
+    {
+      "id": "db-modernization-scope",
+      "status": "decided",
+      "decision": "Beta keeps the DB schema and business data contract stable by default while allowing schema-nonbreaking access-layer modernization needed for the ToBe runtime; schema migration, bulk data migration, and root-cause DB version remediation are out of scope and should escalate."
+    }
+  ],
+  "core_skills": [
+    {
+      "name": "current-state-analysis",
+      "status": "proposed",
+      "spec_ready": false
+    },
+    {
+      "name": "characterization-e2e",
+      "status": "proposed",
+      "spec_ready": false
+    },
+    {
+      "name": "tobe-architecture-proposal",
+      "status": "proposed",
+      "spec_ready": false
+    },
+    {
+      "name": "feature-slice-migration",
+      "status": "proposed",
+      "spec_ready": false
+    }
+  ],
+  "blocking_gaps": [
+    "behavior_equivalence_matrix_review",
+    "deterministic_e2e_strategy_review",
+    "intermediate_artifact_schema_detail",
+    "core_skill_io_schema",
+    "quality_gate_spec",
+    "characterization_oracle_requirements",
+    "migration_unit_and_strangler_seam_definition",
+    "repo_profile_schema",
+    "eval_harness_ownership",
+    "evaluation_program_spec",
+    "failure_taxonomy"
+  ],
+  "todos": [
+    {
+      "id": "define-repo-selection-policy",
+      "title": "Define repository selection policy",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "id": "define-beta-deliverable",
+      "title": "Define beta deliverable",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "id": "define-behavior-equivalence",
+      "title": "Define behavior equivalence matrix",
+      "status": "blocked",
+      "priority": "high"
+    },
+    {
+      "id": "define-artifact-schema",
+      "title": "Define intermediate artifact and evidence schema",
+      "status": "in_progress",
+      "priority": "high"
+    },
+    {
+      "id": "define-support-matrix",
+      "title": "Define FROM/TO support matrix",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "id": "define-skill-io",
+      "title": "Define core skill input/output schemas",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "define-quality-gates",
+      "title": "Define deterministic quality gates",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "define-characterization-oracle",
+      "title": "Define characterization oracle quality requirements",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "define-eval-program",
+      "title": "Define evaluation program",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "define-migration-unit",
+      "title": "Define migration unit and strangler seam model",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "review-deterministic-e2e",
+      "title": "Review deterministic E2E draft",
+      "status": "blocked",
+      "priority": "high"
+    },
+    {
+      "id": "define-repo-profile-schema",
+      "title": "Define repo profile schema",
+      "status": "pending",
+      "priority": "medium"
+    },
+    {
+      "id": "define-eval-harness-ownership",
+      "title": "Define eval harness ownership",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "define-failure-taxonomy",
+      "title": "Define failure taxonomy",
+      "status": "pending",
+      "priority": "medium"
+    },
+    {
+      "id": "integrate-skill-creator",
+      "title": "Define skill-creator integration design",
+      "status": "post-beta",
+      "priority": "medium"
+    }
+  ],
+  "evaluation_program": {
+    "status": "draft",
+    "target_repo_strategy": {
+      "canonical_repo_count": 1,
+      "near_neighbor_repo_count": 2,
+      "adversarial_repo_count": 1,
+      "mode": "fixed_cohort_plus_rolling_expansion",
+      "notes": "Start with 4 repositories total as the initial fixed cohort. Add repos only for new failure families, support-matrix expansion, or stronger holdout/regression coverage."
+    },
+    "measurement_dimensions": [
+      "behavioral_accuracy",
+      "reliability",
+      "flakiness",
+      "security",
+      "time_efficiency",
+      "token_efficiency",
+      "human_intervention",
+      "traceability"
+    ]
+  },
+  "references": [
+    "docs/exploration/research.md",
+    "docs/exploration/idea.md",
+    "docs/state/session-handoff.md",
+    "docs/decisions/repo-selection-policy.md",
+    "docs/decisions/beta-deliverable.md",
+    "docs/decisions/support-matrix.md",
+    "docs/spec-drafts/behavior-equivalence.md",
+    "docs/spec-drafts/e2e-determinism.md",
+    "docs/spec-drafts/artifact-schema.md"
+  ]
+}
